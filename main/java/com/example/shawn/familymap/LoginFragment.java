@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -162,8 +163,7 @@ public class LoginFragment extends Fragment {
                 try {
                     if (loginResponse.getString("success").equalsIgnoreCase("True")) {
                         String authorization = loginResponse.getString("Authorization");
-                        String personId = loginResponse.getString("personId");
-                        new getUserDataTask().execute(this.host, this.port, personId, authorization);
+                        new getUserEventsTask().execute(this.host, this.port, authorization);
                     } else {
                         Toast toast = Toast.makeText(getContext(), loginResponse.getString("message"), Toast.LENGTH_SHORT);
                         toast.show();
@@ -175,7 +175,76 @@ public class LoginFragment extends Fragment {
         }
     }
 
-    private class getUserDataTask extends AsyncTask<String, Void, JSONObject> {
+    private class getUserEventsTask extends AsyncTask<String, Void, JSONObject> {
+        String host;
+        String port;
+        String authorization;
+
+        /**
+         * Override this method to perform a computation on a background thread. The
+         * specified parameters are the parameters passed to {@link #execute}
+         * by the caller of this task.
+         * <p/>
+         * This method can call {@link #publishProgress} to publish updates
+         * on the UI thread.
+         *
+         * @param params The parameters of the task.
+         * @return A result, defined by the subclass of this task.
+         * @see #onPreExecute()
+         * @see #onPostExecute
+         * @see #publishProgress
+         */
+        @Override
+        protected JSONObject doInBackground(String... params) {
+            host = params[0];
+            port = params[1];
+            authorization = params[2];
+            String url = "http://" + host + ":" + port + "/event/";
+
+            try {
+                JSONObject getEventsResponse = sendRequestToUrl(url, null, authorization);
+                if (getEventsResponse == null) {
+                    return null;
+                } else {
+                    return getEventsResponse;
+                }
+            } catch (IOException e) {
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(JSONObject getEventsResponse) {
+            if (getEventsResponse == null) {
+                Toast toast = Toast.makeText(getContext(), "Error encountered while getting user info.", Toast.LENGTH_LONG);
+                toast.show();
+            } else {
+                try {
+                    JSONArray data = getEventsResponse.getJSONArray("data");
+                    int dataCount = data.length();
+                    for (int i = 0; i < dataCount; i++) {
+                        JSONObject eventObj = data.getJSONObject(i);
+                        Event event = new Event();
+                        event.setId(eventObj.getString("eventID"));
+                        event.setPersonId(eventObj.getString("personID"));
+                        event.setLatitude(eventObj.getDouble("latitude"));
+                        event.setLongitude(eventObj.getDouble("longitude"));
+                        event.setCountry(eventObj.getString("country"));
+                        event.setCity(eventObj.getString("city"));
+                        event.setDescription(eventObj.getString("description"));
+                        event.setYear(Integer.parseInt(eventObj.getString("year")));
+                        event.setDescendant(eventObj.getString("descendant"));
+                        DataModel.SINGLETON.addEvent(event.getId(), event);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                new getUserPeopleTask().execute(this.host, this.port, this.authorization);
+            }
+        }
+    }
+
+    private class getUserPeopleTask extends AsyncTask<String, Void, JSONObject> {
 
         /**
          * Override this method to perform a computation on a background thread. The
@@ -195,16 +264,15 @@ public class LoginFragment extends Fragment {
         protected JSONObject doInBackground(String... params) {
             String host = params[0];
             String port = params[1];
-            String personId = params[2];
-            String authorization = params[3];
-            String url = "http://" + host + ":" + port + "/person/" + personId;
+            String authorization = params[2];
+            String url = "http://" + host + ":" + port + "/person/";
 
             try {
-                JSONObject getFamilyResponse = sendRequestToUrl(url, null, authorization);
-                if (getFamilyResponse == null) {
+                JSONObject getEventsResponse = sendRequestToUrl(url, null, authorization);
+                if (getEventsResponse == null) {
                     return null;
                 } else {
-                    return getFamilyResponse;
+                    return getEventsResponse;
                 }
             } catch (IOException e) {
                 return null;
@@ -212,20 +280,49 @@ public class LoginFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(JSONObject userDataResponse) {
-            if (userDataResponse == null) {
+        protected void onPostExecute(JSONObject getPeopleResponse) {
+            if (getPeopleResponse == null) {
                 Toast toast = Toast.makeText(getContext(), "Error encountered while getting user info.", Toast.LENGTH_LONG);
                 toast.show();
             } else {
                 try {
-                    String firstName = userDataResponse.getString("firstName");
-                    String lastName = userDataResponse.getString("lastName");
-                    String greeting = "Welcome, " + firstName + " " + lastName + "!";
-                    Toast toast = Toast.makeText(getContext(), greeting, Toast.LENGTH_LONG);
-                    toast.show();
+                    JSONArray data = getPeopleResponse.getJSONArray("data");
+                    int dataCount = data.length();
+                    for (int i = 0; i < dataCount; i++) {
+                        JSONObject eventObj = data.getJSONObject(i);
+                        Person person = new Person();
+                        person.setId(eventObj.getString("personID"));
+                        person.setFirstName(eventObj.getString("firstName"));
+                        person.setLastName(eventObj.getString("lastName"));
+                        person.setGender(eventObj.getString("gender").charAt(0));
+                        person.setDescendant(eventObj.getString("descendant"));
+                        try {
+                            person.setSpouseId(eventObj.getString("spouse"));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            person.setFatherId(eventObj.getString("father"));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            person.setMotherId(eventObj.getString("mother"));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        DataModel.SINGLETON.addPerson(person.getId(), person);
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+
+                MainActivity mainActivity = ((MainActivity) getActivity());
+                mainActivity.onPrepareOptionsMenu(mainActivity.get_menu());
+                mainActivity.getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, new MapviewFragment())
+                        .addToBackStack(null)
+                        .commit();
             }
         }
     }
