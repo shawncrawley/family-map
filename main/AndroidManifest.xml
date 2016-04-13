@@ -36,10 +36,24 @@
 
         <activity
             android:name=".MapActivity"
-            android:label="@string/title_activity_map" />
-        <activity android:name=".FilterActivity" />
-        <activity android:name=".SearchActivity" />
-        <activity android:name=".SettingsActivity"></activity>
+            android:label="@string/title_activity_map"
+            android:parentActivityName=".PersonActivity" />/>
+        <activity
+            android:name=".FilterActivity"
+            android:label="Family Map: Filter"
+            android:parentActivityName=".MainActivity" />
+        <activity
+            android:name=".SearchActivity"
+            android:label="Family Map: Search"
+            android:parentActivityName=".MainActivity" />
+        <activity
+            android:name=".SettingsActivity"
+            android:label="Family Map: Settings"
+            android:parentActivityName=".MainActivity" />
+        <activity
+            android:name=".PersonActivity"
+            android:label="Family Map: Person Details"
+            android:parentActivityName=".PersonActivity" />
     </application>
 
 </manifest>

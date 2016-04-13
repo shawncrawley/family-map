@@ -3,8 +3,16 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
-    <color name="birthEvent">#FD3C3C</color>
+    <color name="birthEvent">#FFFFFF</color>
+    <color name="baptismEvent">#FF0000</color>
+    <color name="censusEvent">#00FF00</color>
+    <color name="christeningEvent">#0000FF</color>
+    <color name="deathEvent">#000000</color>
+    <color name="marriageEvent">#FF00FF</color>
     <color name="maleIcon">#0000FF</color>
     <color name="femaleIcon">#FF69B4</color>
-    <color name="menuIcon">#999966</color>
+    <color name="menuIcon">#333</color>
+    <color name="yellow">#FFFF00</color>
+    <color name="orange">#FFA500</color>
+    <color name="purple">#800080</color>
 </resources>

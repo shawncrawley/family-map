@@ -54,7 +54,7 @@
                 <Switch
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/swtch_evnt_baptism"
+                    android:id="@+id/swch_evnt_baptism"
                     android:layout_gravity="center_vertical|right"
                     android:layout_alignParentLeft="false"
                     android:layout_alignParentTop="false"

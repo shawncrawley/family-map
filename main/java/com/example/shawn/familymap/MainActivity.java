@@ -85,4 +85,31 @@ public class MainActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        FragmentManager fm = this.getSupportFragmentManager();
+        Fragment fragment = fm.findFragmentById(R.id.fragment_container);
+
+        if (DataModel.SINGLETON.getLoggedIn()) {
+            if (fragment == null) {
+                fragment = new MapviewFragment();
+                fm.beginTransaction().add(R.id.fragment_container, fragment).commit();
+            } else if (!fragment.getClass().toString().equalsIgnoreCase("class com.example.shawn.familymap.MapviewFragment")) {
+                fragment = new MapviewFragment();
+                fm.beginTransaction().replace(R.id.fragment_container, fragment).commit();
+            }
+        } else if (!DataModel.SINGLETON.getLoggedIn()) {
+            if (fragment == null) {
+                fragment = new LoginFragment();
+                fm.beginTransaction().add(R.id.fragment_container, fragment).commit();
+            } else if (!fragment.getClass().toString().equalsIgnoreCase("class com.example.shawn.familymap.LoginFragment")) {
+                {
+                    fragment = new LoginFragment();
+                    fm.beginTransaction().replace(R.id.fragment_container, fragment).commit();
+                }
+            }
+        }
+    }
 }

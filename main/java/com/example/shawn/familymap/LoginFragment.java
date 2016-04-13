@@ -26,10 +26,12 @@ import java.net.URL;
  */
 public class LoginFragment extends Fragment {
 
+    public static Button btnSignIn;
     private EditText txtUsername;
     private EditText txtPassword;
     private EditText txtHost;
     private EditText txtPort;
+    public static String userId;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -43,7 +45,7 @@ public class LoginFragment extends Fragment {
         txtPassword = (EditText) v.findViewById(R.id.password);
         txtHost = (EditText) v.findViewById(R.id.host);
         txtPort = (EditText) v.findViewById(R.id.port);
-        Button btnSignIn = (Button) v.findViewById(R.id.btnSignIn);
+        btnSignIn = (Button) v.findViewById(R.id.btnSignIn);
 
         btnSignIn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -163,7 +165,8 @@ public class LoginFragment extends Fragment {
                 try {
                     if (loginResponse.getString("success").equalsIgnoreCase("True")) {
                         String authorization = loginResponse.getString("Authorization");
-                        new getUserEventsTask().execute(this.host, this.port, authorization);
+                        userId = loginResponse.getString("personId");
+                        new getUserPeopleTask().execute(this.host, this.port, authorization);
                     } else {
                         Toast toast = Toast.makeText(getContext(), loginResponse.getString("message"), Toast.LENGTH_SHORT);
                         toast.show();
@@ -235,16 +238,29 @@ public class LoginFragment extends Fragment {
                         event.setYear(Integer.parseInt(eventObj.getString("year")));
                         event.setDescendant(eventObj.getString("descendant"));
                         DataModel.SINGLETON.addEvent(event.getId(), event);
+                        addEventToPerson(event);
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                new getUserPeopleTask().execute(this.host, this.port, this.authorization);
+
+                DataModel.SINGLETON.setLoggedIn(true);
+                MainActivity mainActivity = ((MainActivity) getActivity());
+                if (mainActivity != null) {
+                    mainActivity.onPrepareOptionsMenu(mainActivity.get_menu());
+                    mainActivity.getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new MapviewFragment())
+                            .addToBackStack(null)
+                            .commit();
+                }
             }
         }
     }
 
     private class getUserPeopleTask extends AsyncTask<String, Void, JSONObject> {
+        String host;
+        String port;
+        String authorization;
 
         /**
          * Override this method to perform a computation on a background thread. The
@@ -262,9 +278,9 @@ public class LoginFragment extends Fragment {
          */
         @Override
         protected JSONObject doInBackground(String... params) {
-            String host = params[0];
-            String port = params[1];
-            String authorization = params[2];
+            host = params[0];
+            port = params[1];
+            authorization = params[2];
             String url = "http://" + host + ":" + port + "/person/";
 
             try {
@@ -289,25 +305,25 @@ public class LoginFragment extends Fragment {
                     JSONArray data = getPeopleResponse.getJSONArray("data");
                     int dataCount = data.length();
                     for (int i = 0; i < dataCount; i++) {
-                        JSONObject eventObj = data.getJSONObject(i);
+                        JSONObject personObj = data.getJSONObject(i);
                         Person person = new Person();
-                        person.setId(eventObj.getString("personID"));
-                        person.setFirstName(eventObj.getString("firstName"));
-                        person.setLastName(eventObj.getString("lastName"));
-                        person.setGender(eventObj.getString("gender").charAt(0));
-                        person.setDescendant(eventObj.getString("descendant"));
+                        person.setId(personObj.getString("personID"));
+                        person.setFirstName(personObj.getString("firstName"));
+                        person.setLastName(personObj.getString("lastName"));
+                        person.setGender(personObj.getString("gender").charAt(0));
+                        person.setDescendant(personObj.getString("descendant"));
                         try {
-                            person.setSpouseId(eventObj.getString("spouse"));
+                            person.setSpouseId(personObj.getString("spouse"));
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
                         try {
-                            person.setFatherId(eventObj.getString("father"));
+                            person.setFatherId(personObj.getString("father"));
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
                         try {
-                            person.setMotherId(eventObj.getString("mother"));
+                            person.setMotherId(personObj.getString("mother"));
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -316,14 +332,32 @@ public class LoginFragment extends Fragment {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-
-                MainActivity mainActivity = ((MainActivity) getActivity());
-                mainActivity.onPrepareOptionsMenu(mainActivity.get_menu());
-                mainActivity.getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, new MapviewFragment())
-                        .addToBackStack(null)
-                        .commit();
+                new getUserEventsTask().execute(this.host, this.port, this.authorization);
             }
+        }
+    }
+
+    public void addEventToPerson(Event event) {
+        Person person = DataModel.SINGLETON.getPeople().get(event.getPersonId());
+        switch (event.getDescription()) {
+            case "baptism":
+                person.setBaptismId(event.getId());
+                break;
+            case "birth":
+                person.setBirthId(event.getId());
+                break;
+            case "census":
+                person.setCensusId(event.getId());
+                break;
+            case "christening":
+                person.setChristeningId(event.getId());
+                break;
+            case "death":
+                person.setDeathId(event.getId());
+                break;
+            case "marriage":
+                person.setMarriageId(event.getId());
+                break;
         }
     }
 }

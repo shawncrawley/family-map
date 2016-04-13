@@ -1,9 +1,11 @@
 package com.example.shawn.familymap;
 
+import java.io.Serializable;
+
 /**
  * Class that represents an event
  */
-public class Event {
+public class Event implements Comparable, Serializable {
     private String id;
     private String personId;
     private double latitude;
@@ -11,7 +13,7 @@ public class Event {
     private String country;
     private String city;
     private String description;
-    private int year;
+    private int year = 0;
     private String descendant;
 
     public String getId() {
@@ -86,6 +88,10 @@ public class Event {
         this.descendant = descendant;
     }
 
+    public String getInfo() {
+        return getDescription() + ": " + getCity() + ", " + getCountry() + " (" + getYear() + ")";
+    }
+
     @Override
     public String toString() {
         return "Event{" +
@@ -135,5 +141,27 @@ public class Event {
         result = 31 * result + getYear();
         result = 31 * result + getDescendant().hashCode();
         return result;
+    }
+
+    /**
+     * Compares this object to the specified object to determine their relative
+     * order.
+     *
+     * @param another the object to compare to this instance.
+     * @return a negative integer if this instance is less than {@code another};
+     * a positive integer if this instance is greater than
+     * {@code another}; 0 if this instance has the same order as
+     * {@code another}.
+     * @throws ClassCastException if {@code another} cannot be converted into something
+     *                            comparable to {@code this} instance.
+     */
+    @Override
+    public int compareTo(Object another) {
+        int compareYear = ((Event)another).getYear();
+        /* For Ascending order*/
+        if (this.getYear() - compareYear == 0) {
+            return (this.getDescription().toLowerCase().compareTo(((Event) another).getDescription().toLowerCase()));
+        }
+        return this.getYear() - compareYear;
     }
 }
